@@ -70,6 +70,7 @@ const providers = [
   "azure",
   "xai",
   "bedrock",
+  "claude-code",
 ] as const;
 
 export const cloudProviders = providers.filter(
@@ -171,6 +172,13 @@ export const NeonSchema = z.object({
 });
 export type Neon = z.infer<typeof NeonSchema>;
 
+export const ClaudeCodeSubscriptionSchema = z.object({
+  apiKey: SecretSchema.optional(),
+  subscriptionTier: z.enum(["free", "pro", "team"]).optional(),
+  expiresAt: z.string().optional(), // ISO date string
+});
+export type ClaudeCodeSubscription = z.infer<typeof ClaudeCodeSubscriptionSchema>;
+
 export const ExperimentsSchema = z.object({
   // Deprecated
   enableSupabaseIntegration: z.boolean().describe("DEPRECATED").optional(),
@@ -225,6 +233,7 @@ export const UserSettingsSchema = z.object({
   vercelAccessToken: SecretSchema.optional(),
   supabase: SupabaseSchema.optional(),
   neon: NeonSchema.optional(),
+  claudeCodeSubscription: ClaudeCodeSubscriptionSchema.optional(),
   autoApproveChanges: z.boolean().optional(),
   telemetryConsent: z.enum(["opted_in", "opted_out", "unset"]).optional(),
   telemetryUserId: z.string().optional(),
@@ -286,6 +295,14 @@ export function isTurboEditsV2Enabled(settings: UserSettings): boolean {
       settings.enableProLazyEditsMode === true &&
       settings.proLazyEditsMode === "v2",
   );
+}
+
+export function isClaudeCodeEnabled(settings: UserSettings): boolean {
+  return !!settings.claudeCodeSubscription?.apiKey?.value;
+}
+
+export function hasClaudeCodeSubscription(settings: UserSettings): boolean {
+  return isClaudeCodeEnabled(settings);
 }
 
 // Define interfaces for the props

@@ -21,6 +21,7 @@ import { registerReleaseNoteHandlers } from "./handlers/release_note_handlers";
 import { registerImportHandlers } from "./handlers/import_handlers";
 import { registerSessionHandlers } from "./handlers/session_handlers";
 import { registerProHandlers } from "./handlers/pro_handlers";
+import { registerClaudeCodeHandlers } from "./handlers/claude_code_handlers";
 import { registerContextPathsHandlers } from "./handlers/context_paths_handlers";
 import { registerAppUpgradeHandlers } from "./handlers/app_upgrade_handlers";
 import { registerCapacitorHandlers } from "./handlers/capacitor_handlers";
@@ -59,6 +60,7 @@ export function registerIpcHandlers() {
   registerImportHandlers();
   registerSessionHandlers();
   registerProHandlers();
+  registerClaudeCodeHandlers();
   registerContextPathsHandlers();
   registerAppUpgradeHandlers();
   registerCapacitorHandlers();

@@ -376,6 +376,23 @@ function getRegularModelClient(
         backupModelClients: [],
       };
     }
+    case "claude-code": {
+      // Claude Code uses subscription-based access to Claude models
+      const claudeCodeApiKey = settings.claudeCodeSubscription?.apiKey?.value;
+      if (!claudeCodeApiKey) {
+        throw new Error(
+          "Claude Code subscription is not configured. Please connect your Claude Code subscription in Settings.",
+        );
+      }
+      const provider = createAnthropic({ apiKey: claudeCodeApiKey });
+      return {
+        modelClient: {
+          model: provider(model.name),
+          builtinProviderId: providerId,
+        },
+        backupModelClients: [],
+      };
+    }
     case "bedrock": {
       // AWS Bedrock supports API key authentication using AWS_BEARER_TOKEN_BEDROCK
       // See: https://sdk.vercel.ai/providers/ai-sdk-providers/amazon-bedrock#api-key-authentication

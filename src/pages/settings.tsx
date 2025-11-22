@@ -16,6 +16,7 @@ import { useRouter } from "@tanstack/react-router";
 import { GitHubIntegration } from "@/components/GitHubIntegration";
 import { VercelIntegration } from "@/components/VercelIntegration";
 import { SupabaseIntegration } from "@/components/SupabaseIntegration";
+import { ClaudeCodeIntegration } from "@/components/ClaudeCodeIntegration";
 
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -122,6 +123,7 @@ export default function SettingsPage() {
               Integrations
             </h2>
             <div className="space-y-4">
+              <ClaudeCodeIntegration />
               <GitHubIntegration />
               <VercelIntegration />
               <SupabaseIntegration />
