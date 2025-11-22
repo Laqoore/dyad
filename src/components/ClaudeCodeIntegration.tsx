@@ -1,113 +1,146 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Bot, ExternalLink } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { showSuccess, showError } from "@/lib/toast";
 import { isClaudeCodeEnabled } from "@/lib/schemas";
+import { IpcClient } from "@/ipc/ipc_client";
 
 export function ClaudeCodeIntegration() {
-  const { settings, updateSettings } = useSettings();
-  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const { settings } = useSettings();
+  const [cliPath, setCliPath] = useState(settings?.claudeCode?.cliPath || "");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleDisconnectFromClaudeCode = async () => {
-    setIsDisconnecting(true);
+  const handleSaveCliPath = async () => {
+    setIsSaving(true);
     try {
-      const result = await updateSettings({
-        claudeCodeSubscription: undefined,
-      });
-      if (result) {
-        showSuccess("Successfully disconnected from Claude Code");
-      } else {
-        showError("Failed to disconnect from Claude Code");
-      }
+      const ipcClient = IpcClient.getInstance();
+      await ipcClient.callIpc("set-claude-code-path", cliPath);
+      showSuccess("Claude Code CLI path saved successfully");
     } catch (err: any) {
-      showError(
-        err.message ||
-          "An error occurred while disconnecting from Claude Code",
-      );
+      showError(err.message || "Failed to save CLI path");
     } finally {
-      setIsDisconnecting(false);
+      setIsSaving(false);
     }
   };
 
-  const handleConnectToClaudeCode = () => {
-    // Open the Claude Code subscription page
-    // In production, this would be the actual subscription URL
-    const subscriptionUrl = "https://claude.ai/subscription";
-    window.open(subscriptionUrl, "_blank");
+  const handleClearCliPath = async () => {
+    try {
+      const ipcClient = IpcClient.getInstance();
+      await ipcClient.callIpc("clear-claude-code-path");
+      setCliPath("");
+      showSuccess("Claude Code CLI path cleared");
+    } catch (err: any) {
+      showError(err.message || "Failed to clear CLI path");
+    }
   };
 
-  const isConnected = isClaudeCodeEnabled(settings);
-  const subscriptionTier = settings?.claudeCodeSubscription?.subscriptionTier;
-
-  if (!isConnected) {
-    return (
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-              <Bot className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Claude Code Subscription
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Use Claude without API keys via your Claude Code subscription
-              </p>
-            </div>
-          </div>
-          <Button
-            onClick={handleConnectToClaudeCode}
-            variant="default"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            Connect
-            <ExternalLink className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const isConfigured = isClaudeCodeEnabled(settings);
 
   return (
-    <div className="border border-purple-200 dark:border-purple-800 rounded-lg p-4 bg-purple-50/50 dark:bg-purple-900/10">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-            <Bot className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+      <div className="flex items-start gap-3">
+        <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg shrink-0">
+          <Bot className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-3">
+            <div>
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Claude Code Subscription
+                Claude Code CLI
               </h3>
-              {subscriptionTier && (
-                <Badge
-                  variant="secondary"
-                  className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300"
-                >
-                  {subscriptionTier.charAt(0).toUpperCase() +
-                    subscriptionTier.slice(1)}
-                </Badge>
-              )}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Use Claude via your Max/Pro subscription through the CLI
+              </p>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Your Claude Code subscription is active
-            </p>
+            <Button
+              onClick={() =>
+                window.open("https://claude.ai/download", "_blank")
+              }
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              Download CLI
+              <ExternalLink className="h-3 w-3" />
+            </Button>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <Label
+                htmlFor="claude-code-path"
+                className="text-xs text-gray-600 dark:text-gray-400"
+              >
+                CLI Path (e.g., /usr/local/bin/claude or claude)
+              </Label>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  id="claude-code-path"
+                  type="text"
+                  placeholder="/usr/local/bin/claude"
+                  value={cliPath}
+                  onChange={(e) => setCliPath(e.target.value)}
+                  className="flex-1 text-sm"
+                />
+                <Button
+                  onClick={handleSaveCliPath}
+                  disabled={isSaving || !cliPath}
+                  size="sm"
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </Button>
+                {isConfigured && (
+                  <Button
+                    onClick={handleClearCliPath}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-3">
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                <strong>Setup Instructions:</strong>
+                <br />
+                1. Download and install Claude Code CLI from{" "}
+                <a
+                  href="https://claude.ai/download"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  claude.ai/download
+                </a>
+                <br />
+                2. Run{" "}
+                <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">
+                  claude /login
+                </code>{" "}
+                in your terminal
+                <br />
+                3. Authenticate with your Claude Max or Pro subscription
+                <br />
+                4. Enter the path to the CLI executable above
+              </p>
+            </div>
+
+            {isConfigured && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3">
+                <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                  <strong>Note:</strong> Full AI SDK integration is under
+                  development. The CLI is configured but not yet usable as a
+                  model provider.
+                </p>
+              </div>
+            )}
           </div>
         </div>
-        <Button
-          onClick={handleDisconnectFromClaudeCode}
-          variant="outline"
-          size="sm"
-          disabled={isDisconnecting}
-          className="flex items-center gap-2"
-        >
-          {isDisconnecting ? "Disconnecting..." : "Disconnect"}
-        </Button>
       </div>
     </div>
   );

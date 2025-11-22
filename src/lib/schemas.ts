@@ -172,12 +172,10 @@ export const NeonSchema = z.object({
 });
 export type Neon = z.infer<typeof NeonSchema>;
 
-export const ClaudeCodeSubscriptionSchema = z.object({
-  apiKey: SecretSchema.optional(),
-  subscriptionTier: z.enum(["free", "pro", "team"]).optional(),
-  expiresAt: z.string().optional(), // ISO date string
+export const ClaudeCodeSettingsSchema = z.object({
+  cliPath: z.string().optional(), // Path to Claude Code CLI executable
 });
-export type ClaudeCodeSubscription = z.infer<typeof ClaudeCodeSubscriptionSchema>;
+export type ClaudeCodeSettings = z.infer<typeof ClaudeCodeSettingsSchema>;
 
 export const ExperimentsSchema = z.object({
   // Deprecated
@@ -233,7 +231,7 @@ export const UserSettingsSchema = z.object({
   vercelAccessToken: SecretSchema.optional(),
   supabase: SupabaseSchema.optional(),
   neon: NeonSchema.optional(),
-  claudeCodeSubscription: ClaudeCodeSubscriptionSchema.optional(),
+  claudeCode: ClaudeCodeSettingsSchema.optional(),
   autoApproveChanges: z.boolean().optional(),
   telemetryConsent: z.enum(["opted_in", "opted_out", "unset"]).optional(),
   telemetryUserId: z.string().optional(),
@@ -298,11 +296,11 @@ export function isTurboEditsV2Enabled(settings: UserSettings): boolean {
 }
 
 export function isClaudeCodeEnabled(settings: UserSettings): boolean {
-  return !!settings.claudeCodeSubscription?.apiKey?.value;
+  return !!settings.claudeCode?.cliPath;
 }
 
-export function hasClaudeCodeSubscription(settings: UserSettings): boolean {
-  return isClaudeCodeEnabled(settings);
+export function getClaudeCodePath(settings: UserSettings): string | undefined {
+  return settings.claudeCode?.cliPath;
 }
 
 // Define interfaces for the props

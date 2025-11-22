@@ -1,50 +1,71 @@
-import fetch from "node-fetch";
 import log from "electron-log";
 import { createLoggedHandler } from "./safe_handle";
-import { readSettings } from "../../main/settings";
+import { readSettings, writeSettings } from "../../main/settings";
 import { IS_TEST_BUILD } from "../utils/test_utils";
+import { checkClaudeCodeStatus } from "../utils/claude_code_runner";
 
 const logger = log.scope("claude_code_handlers");
 const handle = createLoggedHandler(logger);
 
-export interface ClaudeCodeSubscriptionInfo {
-  isActive: boolean;
-  tier?: "free" | "pro" | "team";
-  expiresAt?: string;
+export interface ClaudeCodeStatus {
+  configured: boolean;
+  available: boolean;
+  authenticated: boolean;
+  cliPath?: string;
+  error?: string;
 }
 
 export function registerClaudeCodeHandlers() {
-  handle(
-    "get-claude-code-subscription",
-    async (): Promise<ClaudeCodeSubscriptionInfo | null> => {
-      if (IS_TEST_BUILD) {
-        return null;
-      }
-      logger.info("Fetching Claude Code subscription information.");
-
-      const settings = readSettings();
-      const subscription = settings.claudeCodeSubscription;
-
-      if (!subscription?.apiKey?.value) {
-        logger.info("Claude Code subscription is not configured.");
-        return null;
-      }
-
-      // For now, return the stored subscription info
-      // In a real implementation, this could validate with Claude Code API
+  handle("get-claude-code-status", async (): Promise<ClaudeCodeStatus> => {
+    if (IS_TEST_BUILD) {
       return {
-        isActive: true,
-        tier: subscription.subscriptionTier,
-        expiresAt: subscription.expiresAt,
+        configured: false,
+        available: false,
+        authenticated: false,
       };
+    }
+
+    logger.info("Checking Claude Code CLI status.");
+
+    const settings = readSettings();
+    const cliPath = settings.claudeCode?.cliPath;
+
+    if (!cliPath) {
+      return {
+        configured: false,
+        available: false,
+        authenticated: false,
+        error: "CLI path not configured",
+      };
+    }
+
+    const status = await checkClaudeCodeStatus(settings);
+
+    return {
+      configured: true,
+      available: status.available,
+      authenticated: status.authenticated,
+      cliPath,
+      error: status.error,
+    };
+  });
+
+  handle(
+    "set-claude-code-path",
+    async (_event, cliPath: string): Promise<void> => {
+      logger.info(`Setting Claude Code CLI path: ${cliPath}`);
+      writeSettings({
+        claudeCode: {
+          cliPath,
+        },
+      });
     },
   );
 
-  handle("disconnect-claude-code", async (): Promise<void> => {
-    logger.info("Disconnecting Claude Code subscription.");
-    const { writeSettings } = await import("../../main/settings");
+  handle("clear-claude-code-path", async (): Promise<void> => {
+    logger.info("Clearing Claude Code CLI path.");
     writeSettings({
-      claudeCodeSubscription: undefined,
+      claudeCode: undefined,
     });
   });
 }

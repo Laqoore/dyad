@@ -13,7 +13,6 @@ import {
 } from "./main/settings";
 import { handleSupabaseOAuthReturn } from "./supabase_admin/supabase_return_handler";
 import { handleDyadProReturn } from "./main/pro";
-import { handleClaudeCodeReturn } from "./main/claude_code";
 import { IS_TEST_BUILD } from "./ipc/utils/test_utils";
 import { BackupManager } from "./backup_manager";
 import { getDatabasePath, initializeDatabase } from "./db";
@@ -323,26 +322,6 @@ function handleDeepLinkReturn(url: string) {
     }
     handleDyadProReturn({
       apiKey,
-    });
-    // Send message to renderer to trigger re-render
-    mainWindow?.webContents.send("deep-link-received", {
-      type: parsed.hostname,
-    });
-    return;
-  }
-  // dyad://claude-code-return?key=123&tier=pro&expiresAt=2026-05-26T16:31:13.492000Z
-  if (parsed.hostname === "claude-code-return") {
-    const apiKey = parsed.searchParams.get("key");
-    const tier = parsed.searchParams.get("tier");
-    const expiresAt = parsed.searchParams.get("expiresAt");
-    if (!apiKey) {
-      dialog.showErrorBox("Invalid URL", "Expected key");
-      return;
-    }
-    handleClaudeCodeReturn({
-      apiKey,
-      subscriptionTier: tier as "free" | "pro" | "team" | undefined,
-      expiresAt: expiresAt || undefined,
     });
     // Send message to renderer to trigger re-render
     mainWindow?.webContents.send("deep-link-received", {
