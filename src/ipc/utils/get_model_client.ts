@@ -20,6 +20,7 @@ import { FREE_OPENROUTER_MODEL_NAMES } from "../shared/language_model_constants"
 import { getLanguageModelProviders } from "../shared/language_model_helpers";
 import { LanguageModelProvider } from "../ipc_types";
 import { createDyadEngine } from "./llm_engine_provider";
+import { createClaudeCodeProvider } from "./claude_code_provider";
 
 import { LM_STUDIO_BASE_URL } from "./lm_studio_utils";
 import { createOllamaProvider } from "./ollama_provider";
@@ -377,28 +378,16 @@ function getRegularModelClient(
       };
     }
     case "claude-code": {
-      // Claude Code CLI integration
-      const cliPath = settings.claudeCode?.cliPath;
-      if (!cliPath) {
-        throw new Error(
-          "Claude Code CLI path is not configured. Please set the path to your Claude Code CLI in Settings.\n\n" +
-            "To use Claude Code:\n" +
-            "1. Install Claude Code CLI from https://claude.ai/download\n" +
-            "2. Run 'claude /login' to authenticate with your Claude subscription\n" +
-            "3. Set the CLI path in Dyad Settings",
-        );
-      }
-
-      // Note: Full CLI integration requires a custom Language Model provider
-      // For now, we throw a helpful error. This can be extended later with:
-      // - Custom LanguageModelV2 implementation that wraps the CLI
-      // - Streaming support via CLI output parsing
-      // - Session management
-      throw new Error(
-        "Claude Code CLI provider is configured but not yet fully integrated.\n\n" +
-          `CLI Path: ${cliPath}\n\n` +
-          "This feature is under development. For now, please use the regular Anthropic provider with an API key.",
-      );
+      // Claude Code CLI integration - uses subscription without API costs
+      logger.info("Using Claude Code CLI provider");
+      const provider = createClaudeCodeProvider(model.name, settings);
+      return {
+        modelClient: {
+          model: provider,
+          builtinProviderId: providerId,
+        },
+        backupModelClients: [],
+      };
     }
     case "bedrock": {
       // AWS Bedrock supports API key authentication using AWS_BEARER_TOKEN_BEDROCK

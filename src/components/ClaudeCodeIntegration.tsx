@@ -131,11 +131,11 @@ export function ClaudeCodeIntegration() {
             </div>
 
             {isConfigured && (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3">
-                <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                  <strong>Note:</strong> Full AI SDK integration is under
-                  development. The CLI is configured but not yet usable as a
-                  model provider.
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-3">
+                <p className="text-xs text-green-700 dark:text-green-300">
+                  <strong>✓ Ready:</strong> Claude Code CLI is configured. You
+                  can now select "Claude Code" as your provider and use any
+                  Claude model via your subscription without API costs.
                 </p>
               </div>
             )}
